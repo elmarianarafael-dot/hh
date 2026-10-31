@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Patadas Survivor</title>
+<style>
+:root{--bg:#090d16;--panel:#141b2a;--cyan:#38d9f5;--gold:#ffd45a;--muted:#9ba8bd}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#1b2940,#090d16 60%);color:#f5f7fb;font-family:system-ui,Arial,sans-serif;min-height:100vh}
+button{border:1px solid #3b526c;background:#1c2b40;color:white;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #0b111c;transition:.15s}
+button:hover{filter:brightness(1.2);transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #27364b;background:#080d16cc;position:sticky;top:0;z-index:5}
+.logo{font-weight:1000;letter-spacing:2px;color:var(--cyan);font-size:20px}.wallet{color:var(--gold);font-weight:900}
+main{max-width:1100px;margin:auto;padding:22px 16px}
+.screen{display:none}.screen.active{display:block}
+.hero{text-align:center;padding:25px 10px 18px}.hero h1{font-size:clamp(32px,6vw,58px);line-height:1;margin:5px 0 12px;text-shadow:0 5px #101827}.hero p{color:var(--muted);margin:0 auto 18px;max-width:600px}
+.actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}.primary{background:linear-gradient(#29cce9,#087fae);border-color:#57e6ff}.gold{background:linear-gradient(#ffe48a,#bd8217);color:#241906;border-color:#ffe28b}.danger{background:#652d40;border-color:#a74d69}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin:25px 0 12px}.section-title h2{margin:0;font-size:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
+.card{background:linear-gradient(145deg,#1b2535,#101722);border:1px solid #2b3b50;border-radius:15px;padding:12px;text-align:center;min-width:0}
+.card.selected{border-color:var(--cyan);box-shadow:0 0 0 1px #38d9f555}.portrait{height:112px;background:linear-gradient(#283344,#101722);border-radius:10px;display:grid;place-items:center;margin-bottom:9px}
+.portrait img{height:106px;width:auto;max-width:100%;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 5px 3px #0008)}
+.card h3{margin:3px 0 2px;font-size:16px}.tag{color:var(--cyan);font-size:10px;letter-spacing:1.5px;text-transform:uppercase}.desc{font-size:12px;color:var(--muted);min-height:42px;margin:7px 0}
+.locked .portrait img{filter:brightness(.15) grayscale(1)}.locked:after{content:"🔒 BLOQUEADO";color:#ffd45a;font-size:11px;font-weight:900}
+#gameWrap{max-width:900px;margin:auto}#gameTop{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;color:#dce8f7;font-weight:800}
+canvas{width:100%;aspect-ratio:16/9;background:#111c2b;border:2px solid #344b66;border-radius:14px;display:block;touch-action:none}
+.game-controls{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}.mobile-pad{display:none;gap:5px}
+.mobile-pad button{padding:10px 15px;min-width:48px}
+#doorStage{background:linear-gradient(145deg,#222d40,#101722);border:1px solid #3a526d;border-radius:18px;padding:24px;text-align:center;max-width:650px;margin:20px auto}
+.door{width:160px;height:220px;margin:16px auto 20px;position:relative;background:linear-gradient(90deg,#713e22,#a76a37 48%,#60351e);border:8px solid #3c2419;border-radius:10px 10px 2px 2px;box-shadow:inset 0 0 0 4px #c18a50,0 12px 20px #0008;transform-origin:left;display:grid;place-items:center}
+.door:before{content:"";position:absolute;inset:12px;border:3px solid #e1b778;opacity:.7}.door:after{content:"●";position:absolute;right:13px;top:48%;color:#ffdc75;font-size:20px}
+.door.kick{animation:kick .34s ease-in-out 4}.door.broken{animation:breakDoor .8s forwards}
+@keyframes kick{0%,100%{transform:rotate(0)}35%{transform:rotate(-7deg) translateX(-6px)}70%{transform:rotate(4deg) translateX(4px)}}
+@keyframes breakDoor{to{transform:rotateY(78deg) translateX(45px);opacity:.15}}
+#reveal{display:none;animation:pop .6s cubic-bezier(.2,1.5,.5,1)}#reveal img{height:145px;image-rendering:pixelated;filter:drop-shadow(0 8px 5px #0008)}
+@keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+.note{color:var(--muted);font-size:13px;text-align:center}
+footer{text-align:center;color:#64748b;font-size:11px;padding:25px}
+@media(max-width:650px){main{padding:12px}.mobile-pad{display:flex}.hero{padding-top:18px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}header{padding:12px}.logo{font-size:16px}}
+</style>
+</head>
+<body>
+<header><div class="logo">⚡ PATADAS SURVIVOR</div><div class="wallet">🪙 <span id="coinCount">0</span></div></header>
+<main>
+<section id="home" class="screen active">
+ <div class="hero"><h1>PATADAS<br>SURVIVOR</h1><p>Sobrevive a las hordas, consigue monedas y rompe puertas para reunir a los 13 personajes.</p>
+ <div class="actions"><button class="primary" onclick="startGame()">▶ JUGAR</button><button onclick="showScreen('characters')">👥 PERSONAJES</button><button class="gold" onclick="showScreen('shop')">🛒 TIENDA</button></div></div>
+ <div class="section-title"><h2>Tu personaje</h2><span class="tag" id="chosenName">MARIANO</span></div>
+ <div class="card selected" style="max-width:220px;margin:auto" id="chosenCard"></div>
+ <p class="note">Mueve al personaje, esquiva enemigos y ataca automáticamente.</p>
+</section>
+<section id="characters" class="screen">
+ <div class="section-title"><h2>Personajes</h2><button onclick="showScreen('home')">← VOLVER</button></div>
+ <p class="note">Desbloquea personajes rompiendo la puerta de la tienda.</p><div class="grid" id="characterGrid"></div>
+</section>
+<section id="shop" class="screen">
+ <div class="section-title"><h2>🚪 Puerta misteriosa</h2><button onclick="showScreen('home')">← VOLVER</button></div>
+ <div id="doorStage">
+  <h2>LA PUERTA DE LAS PATADAS</h2><p class="note">Cuesta 1,000 monedas. Dale una buena patada y descubre quién está detrás.</p>
+  <div class="door" id="door"></div>
+  <div id="reveal"><img id="revealImg"><h2 id="revealName"></h2><p id="revealDesc" class="note"></p></div>
+  <button class="gold" id="buyDoor" onclick="buyDoor()">🦶 ROMPER PUERTA · 1,000 🪙</button>
+  <p class="note" id="doorMessage">Los personajes aparecen en un orden fijo. ¡Sin sorteos!</p>
+ </div>
+</section>
+<section id="game" class="screen">
+ <div id="gameWrap">
+  <div id="gameTop"><span>❤️ Vida: <b id="hp">100</b></span><span>🌊 Oleada: <b id="wave">1</b></span><span>✨ <b id="evolutionStatus">Sin evolución</b></span><span>⭐ Nivel: <b id="level">1</b></span><span>☠ Enemigos: <b id="kills">0</b></span><span>⏱ <b id="timer">0:00</b></span></div>
+  <canvas id="arena" width="960" height="540"></canvas>
+  <div class="game-controls"><span>WASD / Flechas · Sobrevive y recoge monedas</span><div class="mobile-pad">
+   <button onpointerdown="touchMove('up',1)" onpointerup="touchMove('up',0)">↑</button>
+   <button onpointerdown="touchMove('left',1)" onpointerup="touchMove('left',0)">←</button>
+   <button onpointerdown="touchMove('down',1)" onpointerup="touchMove('down',0)">↓</button>
+   <button onpointerdown="touchMove('right',1)" onpointerup="touchMove('right',0)">→</button>
+  </div><button class="danger" onclick="endGame(false)">SALIR</button></div>
+  <p class="note">Cada enemigo derrotado da monedas. ¡Aguanta todo lo que puedas!</p>
+ </div>
+</section>
+<section id="result" class="screen">
+ <div class="hero"><h1 id="resultTitle">¡BUENA PARTIDA!</h1><p id="resultText"></p><div class="actions"><button class="primary" onclick="startGame()">VOLVER A JUGAR</button><button onclick="showScreen('home')">MENÚ PRINCIPAL</button><button class="gold" onclick="showScreen('shop')">IR A LA TIENDA</button></div></div>
+</section>
+</main>
+<div id="upgradeOverlay" style="display:none;position:fixed;inset:0;background:#07101beF;z-index:20;align-items:center;justify-content:center;padding:18px"><div style="max-width:720px;width:100%;background:#192b40;border:2px solid #45dff5;border-radius:18px;padding:20px;text-align:center"><h2>⭐ ¡SUBISTE DE NIVEL!</h2><p>Elige una mejora para tu habilidad.</p><div id="upgradeGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px"></div></div></div>
+<footer>Patadas Survivor · Juego original de supervivencia · Progreso guardado en este dispositivo</footer>
+<script>
+const characters=[
+{name:"Mariano",skill:"Patadas",desc:"Patea todo lo que se le acerque. Golpe corto, fuerte y en abanico.",file:"mariano.png"},
+{name:"Emiliano",skill:"Lentes",desc:"Lanza sus lentes y vuelven como bumerán, atravesando la fila.",file:"emiliano.png"},
+{name:"Ian",skill:"Balones",desc:"Balones que rebotan en los enemigos y no perdonan.",file:"ian.png"},
+{name:"Chilo",skill:"Hamburguesas",desc:"Hamburguesas explosivas que caen justo encima de la horda.",file:"chilo.png"},
+{name:"Huero",skill:"Huesos",desc:"Huesos girando a su alrededor sin descanso.",file:"huero.png"},
+{name:"Raúl",skill:"Banderas",desc:"Abanico de banderas que abre hueco por donde pase.",file:"raul.png"},
+{name:"León",skill:"Balones y hamburguesas",desc:"Alterna balón y hamburguesa: nunca hay descanso.",file:"leon.png"},
+{name:"Luis",skill:"Papitas",desc:"Ráfagas de papitas voladoras. Muchas, rápidas y filosas.",file:"luis.png"},
+{name:"Santi",skill:"Lanza a Sebas",desc:"Toma impulso y lanza a Sebas directo contra la horda.",file:"santi.png"},
+{name:"Sebas",skill:"Lanza a Santi",desc:"Su arma favorita es Santi. Literalmente.",file:"sebas.png"},
+{name:"Matías",skill:"Balones rectos",desc:"Balonazos rápidos que atraviesan filas enteras.",file:"matias.png"},
+{name:"Pancho",skill:"Balones y cigarros",desc:"Balones al frente y humo de cigarro que quema al pasar.",file:"pancho.png"},
+{name:"Víctor",skill:"Cinturones",desc:"Cinturón bumerán: sale, pega y regresa por donde vino.",file:"victor.png"}
+];
+let coins=Number(localStorage.getItem("ps_coins")||0);
+let owned=JSON.parse(localStorage.getItem("ps_owned")||'["mariano"]');
+let selected=localStorage.getItem("ps_selected")||"mariano";
+let doorBusy=false,game=null,keys={},touch={};
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem("ps_coins",coins);localStorage.setItem("ps_owned",JSON.stringify(owned));localStorage.setItem("ps_selected",selected);updateWallet()}
+function updateWallet(){$("coinCount").textContent=coins.toLocaleString("es-MX");$("buyDoor").disabled=coins<1000||doorBusy||owned.length===13}
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));$(id).classList.add("active");if(id==="characters")renderCharacters();if(id==="home")renderChosen();if(id==="shop")resetDoor();updateWallet()}
+function renderChosen(){let c=characters.find(x=>x.file===selected+".png")||characters[0];$("chosenName").textContent=c.name.toUpperCase();$("chosenCard").innerHTML=cardHTML(c,true)}
+function cardHTML(c,isOwned){return `<div class="portrait"><img src="assets/${c.file}"></div><h3>${c.name}</h3><div class="tag">${c.skill}</div><p class="desc">${c.desc}</p>${isOwned?`<button class="${selected===c.file.replace('.png','')?'primary':''}" onclick="selectCharacter('${c.file.replace('.png','')}')">${selected===c.file.replace('.png','')?'ELEGIDO':'ELEGIR'}</button>`:'<span class="tag">🔒 BLOQUEADO</span>'}`}
+function renderCharacters(){$("characterGrid").innerHTML=characters.map(c=>`<div class="card ${owned.includes(c.file.replace('.png',''))?'':'locked'}">${cardHTML(c,owned.includes(c.file.replace('.png','')))}</div>`).join("")}
+function selectCharacter(id){if(!owned.includes(id))return;selected=id;save();renderCharacters();renderChosen()}
+function nextLocked(){return characters.find(c=>!owned.includes(c.file.replace(".png","")))}
+function resetDoor(){if(doorBusy)return;$("door").style.display="grid";$("door").className="door";$("reveal").style.display="none";$("buyDoor").style.display="inline-block";$("buyDoor").textContent="🦶 ROMPER PUERTA · 1,000 🪙";$("doorMessage").textContent=owned.length===13?"¡Ya reuniste a los 13 personajes!":"Los personajes aparecen en un orden fijo. ¡Sin sorteos!";updateWallet()}
+function buyDoor(){if(coins<1000||doorBusy||owned.length===13)return;coins-=1000;save();doorBusy=true;updateWallet();$("buyDoor").disabled=true;$("doorMessage").textContent="¡PATADA! ¡PATADA! ¡LA PUERTA SE ESTÁ ROMPIENDO!";$("door").classList.add("kick");setTimeout(()=>{$("door").className="door broken";$("doorMessage").textContent="¡CRAAASH! ¡MIRA QUIÉN ESTABA DETRÁS!";},1350);setTimeout(()=>{let c=nextLocked();if(!c){doorBusy=false;resetDoor();return;}let id=c.file.replace(".png","");owned.push(id);save();$("door").style.display="none";$("reveal").style.display="block";$("revealImg").src="assets/"+c.file;$("revealName").textContent="¡"+c.name.toUpperCase()+" ES TUYO!";$("revealDesc").textContent=c.desc;$("buyDoor").style.display="inline-block";$("buyDoor").textContent="¡PERSONAJE DESBLOQUEADO!";$("buyDoor").disabled=true;$("doorMessage").textContent="Ya puedes elegirlo en Personajes. ¡Sigue jugando para conseguir más monedas!";doorBusy=false;renderCharacters();},2200)}
+function startGame(){showScreen("game");game={x:0,y:0,hp:100,level:1,xp:0,nextXp:10,wave:1,kills:0,elapsed:0,spawn:0,attack:0,damageWait:0,enemies:[],shots:[],drops:[],gems:[],effects:[],decor:[],evolved:false,bossWave:0,bossActive:false,up:{damage:0,speed:0,range:0,quantity:0,area:0},last:performance.now(),paused:false,over:false};for(let i=0;i<100;i++)game.decor.push({x:Math.random()*2600-1300,y:Math.random()*2600-1300,t:Math.random()<.55?"tree":"bush",r:12+Math.random()*17});requestAnimationFrame(loop)}
+function endGame(){if(!game)return;game.over=true;let bonus=Math.floor(game.elapsed/12)*5;coins+=bonus;save();$("resultTitle").textContent="¡FIN DE LA PARTIDA!";$("resultText").textContent=`Llegaste a la oleada ${game.wave}, derrotaste ${game.kills} enemigos y ganaste ${bonus} monedas extra.`;showScreen("result")}
+function touchMove(d,v){touch[d]=!!v}
+onkeydown=e=>{keys[e.key.toLowerCase()]=true;if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault()};onkeyup=e=>keys[e.key.toLowerCase()]=false;
+const skillTypes={mariano:"melee",emiliano:"boomerang",ian:"bounce",chilo:"bomb",huero:"orbit",raul:"fan",leon:"dual",luis:"burst",santi:"heavy",sebas:"heavy",matias:"line",pancho:"smoke",victor:"boomerang"};
+const upgrades=[['damage','💥 Más daño','Cada golpe pega más fuerte.'],['speed','⚡ Más velocidad','Tu habilidad se activa más rápido.'],['range','🎯 Más alcance','Tus ataques llegan más lejos.'],['quantity','✋ Más proyectiles','Lanzas proyectiles adicionales.'],['area','🌟 Más área','Aumenta el tamaño de los impactos.']];
+function nearest(){return game.enemies.reduce((a,b)=>!a||Math.hypot(b.x-game.x,b.y-game.y)<Math.hypot(a.x-game.x,a.y-game.y)?b:a,null)}
+function hurt(e,n){if(e.dead)return;e.hp-=n;if(e.hp<=0){e.dead=true;game.kills++;game.gems.push({x:e.x,y:e.y});if(Math.random()<.45||e.boss)game.drops.push({x:e.x,y:e.y});if(e.boss){game.bossActive=false;coins+=250;game.xp+=8;game.hp=Math.min(100,game.hp+30);save();alert('🏆 ¡JEFE DERROTADO! Recompensa: +250 monedas, +8 experiencia y +30 vida.');}}}
+function levelUp(){game.paused=true;let options=[...upgrades].sort(()=>Math.random()-.5).slice(0,3);$("upgradeGrid").innerHTML=options.map(([id,name,desc])=>`<button style="background:#263e58;border:1px solid #5b8bad;padding:14px" onclick="takeUpgrade('${id}')"><b>${name}</b><br><small>${desc}<br>Nivel ${game.up[id]} → ${game.up[id]+1}</small></button>`).join('');$("upgradeOverlay").style.display="flex"}
+function takeUpgrade(id){game.up[id]=Math.min(5,game.up[id]+1);
+if(!game.evolved&&game.up.damage>=5&&(game.up.area>=3||game.up.quantity>=3)){game.evolved=true;game.hp=Math.min(100,game.hp+20);coins+=100;save();alert('✨ ¡HABILIDAD EVOLUCIONADA! Tu ataque principal ahora hace mucho más daño. +100 monedas y +20 vida.');}
+game.paused=false;$("upgradeOverlay").style.display="none";game.last=performance.now();requestAnimationFrame(loop)}
+function spawnEnemy(isBoss=false){
+let a=Math.random()*Math.PI*2,r=isBoss?560:490,scale=1+game.wave*.19;
+let schoolTypes=['pencil','book','eraser','ruler','backpack','notebook'];
+let type=isBoss?'boss':schoolTypes[Math.floor(Math.random()*schoolTypes.length)];
+let hp=Math.ceil((1+game.wave*.4)*scale*(isBoss?7:1));
+game.enemies.push({x:game.x+Math.cos(a)*r,y:game.y+Math.sin(a)*r,hp,max:hp,speed:isBoss?30+game.wave*1.2:48+game.wave*3,r:isBoss?34:13+Math.min(8,game.wave*.25),type,boss:isBoss});
+if(isBoss){game.bossWave=game.wave;game.bossActive=true;}
+}
+function projectile(target,kind,offset=0){let a=Math.atan2(target.y-game.y,target.x-game.x)+offset;game.shots.push({x:game.x,y:game.y,vx:Math.cos(a)*(kind==='boomerang'?300:kind==='burger'?205:390),vy:Math.sin(a)*(kind==='boomerang'?300:kind==='burger'?205:390),life:kind==='boomerang'?1.6:1.5,kind,damage:(1+game.up.damage*.65)*(game.evolved?1.8:1),hit:[]})}
+function attack(dt){let id=selected,c=characters.find(x=>x.file===id+'.png')||characters[0],type=skillTypes[id]||'line',u=game.up;game.attack-=dt;if(game.attack>0)return;let t=nearest();if(!t)return;game.attack=Math.max(.17,.82-u.speed*.105);let qty=u.quantity>=5?5:1+u.quantity,range=(135+u.range*22)*(type==='melee'&&u.area>=5?2:1);
+if(type==='melee'){let base=Math.atan2(t.y-game.y,t.x-game.x),full=u.area>=5,arc=full?Math.PI*2:Math.PI*.8;game.effects.push({type:'kick',x:game.x,y:game.y,rad:range,angle:base,arc,life:.23});for(let e of game.enemies){let a=Math.atan2(e.y-game.y,e.x-game.x),diff=Math.atan2(Math.sin(a-base),Math.cos(a-base));if(Math.hypot(e.x-game.x,e.y-game.y)<range&&(full||Math.abs(diff)<arc/2))hurt(e,(2+u.damage)*(game.evolved?1.8:1))}return}
+if(type==='orbit'){let n=Math.min(5,2+u.quantity);for(let i=0;i<n;i++){let a=i*Math.PI*2/n+game.elapsed*2;game.effects.push({type:'orbit',x:game.x+Math.cos(a)*range*.48,y:game.y+Math.sin(a)*range*.48,rad:15+u.area*3,life:.65,damage:1+u.damage*.5})}return}
+let kind=type==='boomerang'?'boomerang':type==='bounce'?'ball':type==='bomb'?'burger':type==='fan'?'flag':type==='burst'?'chip':type==='heavy'?'teammate':type==='smoke'?'smoke':'ball';
+for(let i=0;i<qty;i++)projectile(t,kind,(i-(qty-1)/2)*.17);
+if(type==='dual')for(let i=0;i<qty;i++)projectile(t,'burger',(i-(qty-1)/2)*.18);
+}
+function loop(now){if(!game||game.over||game.paused)return;let dt=Math.min((now-game.last)/1000,.04);game.last=now;game.elapsed+=dt;game.wave=1+Math.floor(game.elapsed/28);if(game.wave%5===0&&game.bossWave!==game.wave&&!game.bossActive){spawnEnemy(true)}game.spawn-=dt;game.damageWait-=dt;if(game.spawn<=0){game.spawn=Math.max(.16,.92-game.wave*.055);spawnEnemy(false)}
+game.decor=game.decor.filter(d=>Math.hypot(d.x-game.x,d.y-game.y)<1500);while(game.decor.length<115)game.decor.push({x:game.x+(Math.random()-.5)*2200,y:game.y+(Math.random()-.5)*1400,t:Math.random()<.55?"tree":"bush",r:12+Math.random()*17});
+let dx=(keys.d||keys.arrowright||touch.right?1:0)-(keys.a||keys.arrowleft||touch.left?1:0),dy=(keys.s||keys.arrowdown||touch.down?1:0)-(keys.w||keys.arrowup||touch.up?1:0),len=Math.hypot(dx,dy)||1;game.x+=dx/len*230*dt;game.y+=dy/len*230*dt;
+for(let e of game.enemies){let d=Math.hypot(game.x-e.x,game.y-e.y)||1;e.x+=(game.x-e.x)/d*e.speed*dt;e.y+=(game.y-e.y)/d*e.speed*dt;if(d<23&&game.damageWait<=0){game.hp-=Math.min(15,6+game.wave*.35);game.damageWait=.55}}
+attack(dt);for(let sh of game.shots){sh.x+=sh.vx*dt;sh.y+=sh.vy*dt;sh.life-=dt;if(sh.kind==='boomerang'&&sh.life<.8){let a=Math.atan2(game.y-sh.y,game.x-sh.x);sh.vx=Math.cos(a)*350;sh.vy=Math.sin(a)*350}for(let e of game.enemies){if(e.dead||sh.hit.includes(e))continue;if(Math.hypot(e.x-sh.x,e.y-sh.y)<e.r+10){hurt(e,sh.damage);sh.hit.push(e);if(sh.kind==='ball'){sh.life=1.1;if(sh.hit.length>=3)sh.life=0}else if(sh.kind==='boomerang'){if(sh.hit.length>=4)sh.life=0}else if(['burger','smoke'].includes(sh.kind)){let rad=58+game.up.area*13;for(let other of game.enemies)if(Math.hypot(other.x-sh.x,other.y-sh.y)<rad)hurt(other,1+game.up.damage*.5);game.effects.push({type:'boom',x:sh.x,y:sh.y,rad,life:.3});sh.life=0}else sh.life=0;break}}}game.shots=game.shots.filter(x=>x.life>0);
+for(let ef of game.effects){ef.life-=dt;if(ef.type==='orbit')for(let e of game.enemies)if(!e.dead&&Math.hypot(e.x-ef.x,e.y-ef.y)<ef.rad+e.r)hurt(e,ef.damage*dt*3)}game.effects=game.effects.filter(x=>x.life>0);
+for(let g of game.gems)if(!g.got&&Math.hypot(g.x-game.x,g.y-game.y)<25){g.got=true;game.xp++}game.gems=game.gems.filter(x=>!x.got);for(let d of game.drops)if(!d.got&&Math.hypot(d.x-game.x,d.y-game.y)<25){d.got=true;coins+=5;save()}game.drops=game.drops.filter(x=>!x.got);
+if(game.xp>=game.nextXp){game.xp-=game.nextXp;game.nextXp=Math.ceil(game.nextXp*1.35);game.level++;levelUp();return}game.enemies=game.enemies.filter(x=>!x.dead);draw();$('hp').textContent=Math.max(0,Math.floor(game.hp));$('evolutionStatus').textContent=game.evolved?'EVOLUCIONADA':'Sin evolución';$('level').textContent=game.level;$('wave').textContent=game.wave;$('kills').textContent=game.kills;$('timer').textContent=Math.floor(game.elapsed/60)+':'+String(Math.floor(game.elapsed%60)).padStart(2,'0');if(game.hp<=0){endGame();return}requestAnimationFrame(loop)}
+function draw(){let camX=game.x-480,camY=game.y-270;ctx.clearRect(0,0,960,540);ctx.fillStyle='#72bd5c';ctx.fillRect(0,0,960,540);for(let gx=Math.floor(camX/150)-1;gx<Math.floor(camX/150)+8;gx++)for(let gy=Math.floor(camY/150)-1;gy<Math.floor(camY/150)+6;gy++){let seed=Math.abs(Math.sin(gx*127.1+gy*311.7)*43758)%1,x=gx*150-camX+seed*80,y=gy*150-camY+(1-seed)*80;ctx.fillStyle=seed>.5?'#83cb68':'#68b653';ctx.beginPath();ctx.ellipse(x,y,28,18,seed,0,7);ctx.fill()}
+for(let d of game.decor){let x=d.x-camX,y=d.y-camY;if(x<-45||x>1005||y<-45||y>585)continue;if(d.t==='tree'){ctx.fillStyle='#79502d';ctx.fillRect(x-5,y,10,d.r);ctx.fillStyle='#247b40';ctx.beginPath();ctx.arc(x,y-5,d.r,0,7);ctx.fill();ctx.fillStyle='#51a84e';ctx.beginPath();ctx.arc(x-6,y-10,d.r*.5,0,7);ctx.fill()}else{ctx.fillStyle='#278545';ctx.beginPath();ctx.ellipse(x,y,d.r,d.r*.55,0,0,7);ctx.fill();ctx.fillStyle='#55b75b';ctx.beginPath();ctx.arc(x-5,y-3,d.r*.3,0,7);ctx.fill()}}
+for(let g of game.gems){ctx.fillStyle='#59eaff';ctx.beginPath();ctx.moveTo(g.x-camX,g.y-camY-7);ctx.lineTo(g.x-camX+7,g.y-camY);ctx.lineTo(g.x-camX,g.y-camY+7);ctx.lineTo(g.x-camX-7,g.y-camY);ctx.fill()}for(let d of game.drops){ctx.fillStyle='#ffd45a';ctx.beginPath();ctx.arc(d.x-camX,d.y-camY,7,0,7);ctx.fill()}
+for(let e of game.enemies){let x=e.x-camX,y=e.y-camY;ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=(e.boss?'54px':'31px')+' system-ui, \"Segoe UI Emoji\", sans-serif';let emoji={pencil:'✏️',book:'📕',eraser:'🧽',ruler:'📏',backpack:'🎒',notebook:'📓',boss:'📚'}[e.type]||'📕';ctx.shadowColor='#17251a';ctx.shadowBlur=e.boss?15:5;ctx.fillText(emoji,x,y);ctx.restore();ctx.fillStyle='#243447';ctx.fillRect(x-e.r,y-e.r-12,e.r*2,5);ctx.fillStyle=e.boss?'#ffb13b':'#f36b75';ctx.fillRect(x-e.r,y-e.r-12,e.r*2*Math.max(0,e.hp/e.max),5);if(e.boss){ctx.fillStyle='#fff2c9';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillText('JEFE ESCOLAR',x,y-e.r-22)}}for(let sh of game.shots){ctx.fillStyle=sh.kind==='burger'?'#d99a36':sh.kind==='chip'?'#f6d36b':sh.kind==='flag'?'#ff6688':sh.kind==='teammate'?'#e1efff':sh.kind==='smoke'?'#929eae':'#f0fbff';ctx.beginPath();ctx.arc(sh.x-camX,sh.y-camY,sh.kind==='teammate'?12:7,0,7);ctx.fill()}
+for(let ef of game.effects){let x=ef.x-camX,y=ef.y-camY;ctx.strokeStyle=ef.type==='kick'?'#fff0a8':'#ffbd58';ctx.lineWidth=6;ctx.beginPath();if(ef.type==='kick')ctx.arc(x,y,ef.rad,ef.angle-ef.arc/2,ef.angle+ef.arc/2);else ctx.arc(x,y,ef.rad*(1.2-ef.life),0,7);ctx.stroke()}
+let c=characters.find(x=>x.file===selected+'.png')||characters[0],img=new Image();img.src='assets/'+c.file;ctx.drawImage(img,480-22,270-39,44,60)}
+updateWallet();renderChosen();
+</script>
+</body></html>
